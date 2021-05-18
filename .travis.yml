@@ -3,7 +3,10 @@ language: generic
 
 services:
   - docker
-
+env:
+        global:
+                - SHA=$(git rev-parse HEAD)
+                - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 before_install:
         - openssl aes-256-cbc -K $encrypted_a3386c1dbbae_key -iv $encrypted_a3386c1dbbae_iv -in multi-k8s-314112-05cdc0f3930d.json.enc -out multi-k8s-314112-05cdc0f3930d.json -d
         - curl https://sdk.cloud.google.com | bash > /dev/null;
@@ -19,15 +22,8 @@ before_install:
 script:
   - docker run -e CI=true cygnetops/react-test npm test
 
-after_success:
-  - docker build -t cygnetops/multi-client-10-14 ./client
-  - docker build -t cygnetops/multi-nginx-10-14 ./nginx
-  - docker build -t cygnetops/multi-server-10-14 ./server
-  - docker build -t cygnetops/multi-worker-10-14 ./worker
-  # Log in to the docker CLI
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
-  # Take those images and push them to docker hub
-  - docker push cygnetops/multi-client-10-14
-  - docker push cygnetops/multi-nginx-10-14
-  - docker push cygnetops/multi-server-10-14
-  - docker push cygnetops/multi-worker-10-14
+deploy:
+        provider: script
+        script: bash ./deploy.sh
+        on:
+                branch: master
